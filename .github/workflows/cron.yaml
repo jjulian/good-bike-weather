@@ -3,6 +3,7 @@ name: weather_checker
 on:
   schedule:
     - cron: '0 14 * * *' # runs at 14:00 UTC everyday
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,7 +13,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.10' 
+          python-version: '3.10'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
       - name: execute py script 
         env: 
           DESTINATION_PHONE_NUMBER: ${{ secrets.DESTINATION_PHONE_NUMBER }}
