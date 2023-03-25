@@ -4,12 +4,14 @@ temperate, clear, and low-ish wind so I can plan a long bike ride.
 """
 import argparse
 import json
+import os
 import re
 import sys
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime
+from twilio.rest import Client
 
 
 def pretty_datetime(time):
@@ -25,7 +27,7 @@ def weather_forecast(url):
     wind speed."""
 
     req = urllib.request.Request(
-        url, headers={"User-Agent": "github.com/kingishb/good-bike-weather"}
+        url, headers={"User-Agent": "github.com/jjulian/good-bike-weather"}
     )
 
     periods = []
@@ -95,57 +97,51 @@ def build_message(good_time_periods, low_wind_periods):
     good_times = []
     for t in good_time_periods:
         good_times.append(
-            f'🚴 {pretty_datetime(t["startTime"])} - {pretty_time(t["endTime"])}, Temp {t["temperature"]} F, Precipitation {t["probabilityOfPrecipitation"]}%, Wind Speed {t["maxWindSpeed"]} mph'
+            f'{pretty_datetime(t["startTime"])} - {pretty_time(t["endTime"])}, Temp {t["temperature"]} F, Precipitation {t["probabilityOfPrecipitation"]}%, Wind Speed {t["maxWindSpeed"]} mph'
         )
     gt = "\n".join(good_times)
 
     not_windy_times = []
     for t in low_wind_periods:
         not_windy_times.append(
-            f'🚴 {pretty_datetime(t["startTime"])} - {pretty_time(t["endTime"])}, Temp {t["temperature"]} F, Precipitation {t["probabilityOfPrecipitation"]}%, Wind Speed {t["maxWindSpeed"]} mph'
+            f'{pretty_datetime(t["startTime"])} - {pretty_time(t["endTime"])}, Temp {t["temperature"]} F, Precipitation {t["probabilityOfPrecipitation"]}%, Wind Speed {t["maxWindSpeed"]} mph'
         )
     nw = "\n".join(not_windy_times)
-    msg = "🚲 Cycling weather report 🚲"
+    msg = "Weather report:"
     if len(good_time_periods) > 0:
         msg += f"""
 
-☀️  Great bike weather!
+Great weather!
 {gt}"""
     if len(not_windy_times) > 0:
         msg += f"""
 
-🧤🧣 A little chilly, but you can do it! 
+A little chilly, but you can do it! 
 {nw}"""
-    msg += "\n\nMake a calendar entry and get out there!\n"
+    msg += "\n"
     return msg
 
 
-def push(msg, pushover_user, pushover_token):
-    """Send push notification."""
-    req = urllib.request.Request(
-        "https://api.pushover.net/1/messages.json",
-        json.dumps(
-            {"token": pushover_token, "user": pushover_user, "message": msg}
-        ).encode("utf8"),
-        headers={"content-type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req) as resp:
-        print(json.load(resp))
-
+def sms(msg, to, account_sid, auth_token):
+    """Send sms message."""
+    client = Client(account_sid, auth_token) 
+    message = client.messages.create(  
+                                messaging_service_sid='MGac46043b89dfe9d652478582575bab48',
+                                body=msg,
+                                to=to
+                            )     
+    print(message.sid)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("noaa_url", help="forecast url at api.weather.gov")
-    parser.add_argument("pushover_user", help="pushover user")
-    parser.add_argument("pushover_token", help="pushover token")
     parser.add_argument(
         "--debug",
         action="store_true",
         help="print all the forecasts to look at and the alert",
     )
     parser.add_argument(
-        "--cli", action="store_true", help="run without sending a push alert"
+        "--cli", action="store_true", help="run without sending an sms"
     )
     args = parser.parse_args()
 
@@ -161,11 +157,11 @@ def main():
         if period["isDaytime"] and period["probabilityOfPrecipitation"]["value"] < 25:
             # src: https://www.weather.gov/pqr/wind
             if (
-                50 <= period["temperature"] <= 65 and period["parsedWindSpeed"] < 13
-            ) or (65 < period["temperature"] <= 83 and period["parsedWindSpeed"] <= 18):
+                50 <= period["temperature"] <= 85 and period["parsedWindSpeed"] < 15
+            ) or (65 < period["temperature"] <= 95 and period["parsedWindSpeed"] <= 25):
                 merge_append_forecast(good_time_periods, period)
 
-            elif 32 <= period["temperature"] <= 50 and period["parsedWindSpeed"] < 8:
+            elif 40 <= period["temperature"] <= 50 and period["parsedWindSpeed"] < 5:
                 merge_append_forecast(low_wind_periods, period)
 
     if args.debug:
@@ -187,7 +183,7 @@ def main():
         print(msg)
         return
 
-    push(msg, args.pushover_user, args.pushover_token)
+    sms(msg, os.environ.get('DESTINATION_PHONE_NUMBER'), os.environ.get('TWILIO_ACCOUNT_SID'), os.environ.get('TWILIO_TOKEN'))
 
 
 if __name__ == "__main__":

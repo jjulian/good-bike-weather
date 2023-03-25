@@ -11,11 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
       - name: execute py script 
         env: 
-          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
-          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          TAKOMA_PARK_FORECAST_URL: "https://api.weather.gov/gridpoints/LWX/97,75/forecast/hourly"
-        run: python weather.py $TAKOMA_PARK_FORECAST_URL $PUSHOVER_USER $PUSHOVER_TOKEN
+          DESTINATION_PHONE_NUMBER: ${{ secrets.DESTINATION_PHONE_NUMBER }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
+          FORECAST_URL: "https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly"
+        run: python weather.py $FORECAST_URL
           
           
