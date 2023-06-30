@@ -2,7 +2,7 @@ name: weather_checker
 
 on:
   schedule:
-    - cron: '0 14 * * *' # runs at 14:00 UTC everyday
+    - cron: '0 14 * * 0,3' # runs at 14:00 UTC everyday
   workflow_dispatch:
 
 jobs:
