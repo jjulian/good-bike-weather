@@ -183,7 +183,11 @@ def main():
         print(msg)
         return
 
-    sms(msg, os.environ.get('DESTINATION_PHONE_NUMBER'), os.environ.get('TWILIO_ACCOUNT_SID'), os.environ.get('TWILIO_TOKEN'))
+    # Dec 2023, Twilio requires toll-free numbers to be "verified" which is a process
+    # that seems to exclude personal use cases like this.
+    # sms(msg, os.environ.get('DESTINATION_PHONE_NUMBER'), os.environ.get('TWILIO_ACCOUNT_SID'), os.environ.get('TWILIO_TOKEN'))
+
+    print(msg)
 
 
 if __name__ == "__main__":
