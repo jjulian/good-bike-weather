@@ -1,17 +1,8 @@
 Github action that tells me when to get outside.
 
-Uses NOAA's [weather API](https://www.weather.gov/documentation/services-web-api) and [Twilio](https://twilio.com/).
+Uses NOAA's [weather API](https://www.weather.gov/documentation/services-web-api).
 
-Requires ENV vars (for Twilio notifications):
-```
-NOTIFY_PROVIDER=twilio
-TWILIO_ACCOUNT_SID
-TWILIO_TOKEN
-TWILIO_DESTINATION_PHONE_NUMBER
-TWILIO_MESSAGING_SERVICE_SID
-```
-
-To print notifications to stdout instead, set:
+To print notifications to stdout, set:
 ```
 NOTIFY_PROVIDER=stdout
 ```
