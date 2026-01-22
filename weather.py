@@ -4,14 +4,14 @@ temperate, clear, and low-ish wind so I can plan a long bike ride.
 """
 import argparse
 import json
-import os
 import re
 import sys
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime
-from twilio.rest import Client
+
+from notifications import send_notification
 
 
 def pretty_datetime(time):
@@ -122,16 +122,6 @@ A little chilly, but you can do it!
     return msg
 
 
-def sms(msg, to, account_sid, auth_token):
-    """Send sms message."""
-    client = Client(account_sid, auth_token) 
-    message = client.messages.create(  
-                                messaging_service_sid='MGac46043b89dfe9d652478582575bab48',
-                                body=msg,
-                                to=to
-                            )     
-    print(message.sid)
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("noaa_url", help="forecast url at api.weather.gov")
@@ -183,11 +173,7 @@ def main():
         print(msg)
         return
 
-    # Dec 2023, Twilio requires toll-free numbers to be "verified" which is a process
-    # that seems to exclude personal use cases like this.
-    # sms(msg, os.environ.get('DESTINATION_PHONE_NUMBER'), os.environ.get('TWILIO_ACCOUNT_SID'), os.environ.get('TWILIO_TOKEN'))
-
-    print(msg)
+    send_notification(msg)
 
 
 if __name__ == "__main__":
