@@ -1,8 +1,25 @@
 Github action that tells me when to get outside.
 
-Uses NOAA's [weather API](https://www.weather.gov/documentation/services-web-api).
+Uses NOAA's [weather API](https://www.weather.gov/documentation/services-web-api) and Amazon SNS for notifications.
 
-To print notifications to stdout, set:
+Local setup (SNS notifications):
+```
+NOTIFY_PROVIDER=sns
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+SNS_TOPIC_ARN
+```
+
+GitHub Actions secrets (SNS notifications):
+```
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+SNS_TOPIC_ARN
+```
+
+To print notifications to stdout instead, set:
 ```
 NOTIFY_PROVIDER=stdout
 ```

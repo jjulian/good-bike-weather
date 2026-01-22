@@ -18,9 +18,11 @@ jobs:
       - run: pip install -r requirements.txt
       - name: execute py script 
         env: 
-          DESTINATION_PHONE_NUMBER: ${{ secrets.DESTINATION_PHONE_NUMBER }}
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
+          NOTIFY_PROVIDER: sns
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SNS_TOPIC_ARN: ${{ secrets.SNS_TOPIC_ARN }}
           FORECAST_URL: "https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly"
         run: python weather.py $FORECAST_URL
           
