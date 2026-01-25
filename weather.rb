@@ -191,7 +191,12 @@ def main
 
   return puts msg if options[:debug]
 
-  send_notification(msg) unless msg.nil?
+  if msg.nil?
+    puts "No good weather found"
+  else
+    send_notification(msg)
+    puts "sent notification"
+  end
 end
 
 main if __FILE__ == $PROGRAM_NAME
