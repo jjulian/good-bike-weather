@@ -2,7 +2,7 @@ name: weather_checker
 
 on:
   schedule:
-    - cron: '0 14 * * 0,3' # runs at 14:00 UTC everyday
+    - cron: '0 11 * * *' # 6am EST / 7am EDT daily
   workflow_dispatch:
 
 jobs:
@@ -10,20 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: default
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
-          python-version: '3.10'
-          cache: 'pip'
-      - run: pip install -r requirements.txt
-      - name: execute py script 
-        env: 
-          NOTIFY_PROVIDER: sns
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          SNS_TOPIC_ARN: ${{ secrets.SNS_TOPIC_ARN }}
+          bundler-cache: true
+      - name: Run script
+        env:
+          NOTIFY_PROVIDER: resend
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
           FORECAST_URL: "https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly"
-        run: python weather.py $FORECAST_URL
-          
-          
+        run: ruby weather.rb $FORECAST_URL

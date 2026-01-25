@@ -1,22 +1,20 @@
 Github action that tells me when to get outside.
 
-Uses NOAA's [weather API](https://www.weather.gov/documentation/services-web-api) and Amazon SNS for notifications.
+Uses NOAA's [weather API](https://www.weather.gov/documentation/services-web-api) and [Resend](https://resend.com) for email notifications.
 
-Local setup (SNS notifications):
+Local setup (Resend notifications):
 ```
-NOTIFY_PROVIDER=sns
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_REGION
-SNS_TOPIC_ARN
+NOTIFY_PROVIDER=resend
+RESEND_API_KEY=your-api-key
+EMAIL_FROM=weather@yourdomain.com
+EMAIL_TO=you@example.com
 ```
 
-GitHub Actions secrets (SNS notifications):
+GitHub Actions secrets (Resend notifications):
 ```
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_REGION
-SNS_TOPIC_ARN
+RESEND_API_KEY
+EMAIL_FROM
+EMAIL_TO
 ```
 
 To print notifications to stdout instead, set:
@@ -26,24 +24,23 @@ NOTIFY_PROVIDER=stdout
 
 Usage:
 ```
-usage: weather.py [-h] [--debug] [--cli] noaa_url
+Usage: weather.rb [options] noaa_url
 
-positional arguments:
-  noaa_url        forecast url at api.weather.gov
-
-options:
-  -h, --help      show this help message and exit
-  --debug         print all the forecasts to look at and the alert
-  --cli           run without sending a push alert
+Options:
+    --debug    Print all the forecasts and skip sending
 ```
 
-Setup: to find the gridpoint url for your location:
-* first find the lat,lon of the location
-* go to the api https://api.weather.gov/points/39.0366,-76.504 (Arnold, MD)
-* dig out the properties/forecastHourly url
+Finding your forecast URL:
+1. Get the latitude and longitude for your location (e.g., from Google Maps)
+2. Call the NOAA points API with your coordinates:
+   ```
+   curl https://api.weather.gov/points/LAT,LON
+   ```
+3. In the JSON response, find `properties.forecastHourly` - that's your forecast URL
+
 
 Testing locally:
-First set all ENV vars
 ```
-python3 weather.py --cli https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly
+bundle install
+ruby weather.rb --debug https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly
 ```
