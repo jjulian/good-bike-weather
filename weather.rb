@@ -51,7 +51,7 @@ def send_email(msg)
   }
 
   response = Resend::Emails.send(params)
-  puts response["id"] || "sent"
+  puts response
 end
 
 def pretty_datetime(time_str)
@@ -121,24 +121,19 @@ def merge_append_forecast(time_periods, hourly_forecast)
   end
 end
 
-def build_message(good_time_periods, low_wind_periods)
-  return nil if good_time_periods.empty? && low_wind_periods.empty?
+def format_period(t)
+  "#{pretty_datetime(t['startTime'])} - #{pretty_time(t['endTime'])}, " \
+  "Temp #{t['temperature']} F, Precipitation #{t['probabilityOfPrecipitation']}%, " \
+  "Wind Speed #{t['maxWindSpeed']} mph"
+end
 
-  good_times = good_time_periods.map do |t|
-    "#{pretty_datetime(t['startTime'])} - #{pretty_time(t['endTime'])}, " \
-    "Temp #{t['temperature']} F, Precipitation #{t['probabilityOfPrecipitation']}%, " \
-    "Wind Speed #{t['maxWindSpeed']} mph"
-  end
-
-  not_windy_times = low_wind_periods.map do |t|
-    "#{pretty_datetime(t['startTime'])} - #{pretty_time(t['endTime'])}, " \
-    "Temp #{t['temperature']} F, Precipitation #{t['probabilityOfPrecipitation']}%, " \
-    "Wind Speed #{t['maxWindSpeed']} mph"
-  end
+def build_message(good_time_periods, low_wind_periods, bad_weather_periods)
+  return nil if false && good_time_periods.empty? && low_wind_periods.empty?
 
   msg = "Weather report:"
-  msg += "\n\nGreat weather!\n#{good_times.join("\n")}" if good_times.any?
-  msg += "\n\nA little chilly, but you can do it!\n#{not_windy_times.join("\n")}" if not_windy_times.any?
+  msg += "\n\nGreat weather!\n#{good_time_periods.map { |t| format_period(t) }.join("\n")}" if good_time_periods.any?
+  msg += "\n\nA little chilly, but you can do it!\n#{low_wind_periods.map { |t| format_period(t) }.join("\n")}" if low_wind_periods.any?
+  msg += "\n\nNot ideal:\n#{bad_weather_periods.map { |t| format_period(t) }.join("\n")}" if bad_weather_periods.any?
   msg += "\n"
   msg
 end
@@ -165,6 +160,7 @@ def main
 
   good_time_periods = []
   low_wind_periods = []
+  bad_weather_periods = []
 
   periods.each do |period|
     next unless period["isDaytime"] && period["probabilityOfPrecipitation"]["value"] < 25
@@ -175,10 +171,13 @@ def main
     # Weather preferences (precipitation < 25% already filtered above):
     #   Great:  50-85°F, wind < 15 mph  OR  65-95°F, wind <= 25 mph
     #   Chilly: 40-50°F, wind < 5 mph
+    #   Other:  everything else (dry but not ideal)
     if (temp >= 50 && temp <= 85 && wind < 15) || (temp > 65 && temp <= 95 && wind <= 25)
       merge_append_forecast(good_time_periods, period)
     elsif temp >= 40 && temp <= 50 && wind < 5
       merge_append_forecast(low_wind_periods, period)
+    else
+      merge_append_forecast(bad_weather_periods, period)
     end
   end
 
@@ -190,7 +189,7 @@ def main
     end
   end
 
-  msg = build_message(good_time_periods, low_wind_periods)
+  msg = build_message(good_time_periods, low_wind_periods, bad_weather_periods)
 
   return puts msg if options[:debug]
 
@@ -198,7 +197,6 @@ def main
     puts "No good weather found"
   else
     send_notification(msg)
-    puts "sent notification"
   end
 end
 

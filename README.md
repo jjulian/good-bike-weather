@@ -42,5 +42,5 @@ Finding your forecast URL:
 Testing locally:
 ```
 bundle install
-ruby weather.rb --debug https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly
+bundle exec ruby weather.rb --debug https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly
 ```
