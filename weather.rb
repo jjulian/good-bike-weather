@@ -7,6 +7,8 @@ require "json"
 require "optparse"
 require "time"
 
+class WeatherError < StandardError; end
+
 Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wind) do
   def self.from_hourly(hourly_forecast)
     new(
@@ -81,11 +83,11 @@ def send_email(msg)
 end
 
 def pretty_datetime(time_str)
-  Time.parse(time_str).strftime("%A, %B %-d %-I:%M%p")
+  Time.parse(time_str).strftime("%A, %B %-d %-I:%M%P")
 end
 
 def pretty_time(time_str)
-  Time.parse(time_str).strftime("%-I:%M%p")
+  Time.parse(time_str).strftime("%-I:%M%P")
 end
 
 def daytime_and_dry?(period)
@@ -110,16 +112,14 @@ def weather_forecast(url)
   response = conn.get(url)
 
   unless response.success?
-    puts "http error: #{response.status}"
-    exit 1
+    raise WeatherError, "http error: #{response.status}"
   end
 
   data = JSON.parse(response.body)
   periods = data["properties"]["periods"]
 
   if periods.empty?
-    puts "error: could not load forecast"
-    exit 1
+    raise WeatherError, "error: could not load forecast"
   end
 
   wind_speed_regex = /(?<high>\d+) mph$/
@@ -127,8 +127,7 @@ def weather_forecast(url)
   periods.each do |p|
     match = wind_speed_regex.match(p["windSpeed"])
     if match.nil?
-      puts "error: could not parse wind speed #{p['windSpeed']}"
-      exit 1
+      raise WeatherError, "error: could not parse wind speed #{p['windSpeed']}"
     end
     p["parsedWindSpeed"] = match[:high].to_i
   end
@@ -147,8 +146,8 @@ end
 
 def format_period(t)
   "#{pretty_datetime(t.start_time)} - #{pretty_time(t.end_time)}, " \
-  "Temp #{t.temperature} F, Precipitation #{t.precip_prob}%, " \
-  "Wind Speed #{t.max_wind} mph"
+  "Temp #{t.temperature} F, Precip #{t.precip_prob}%, " \
+  "Wind #{t.max_wind} mph"
 end
 
 def build_message(good_time_periods, low_wind_periods, bad_weather_periods)
@@ -222,6 +221,13 @@ def main
   else
     send_notification(msg)
   end
+rescue WeatherError => e
+  if ENV["CI"] == "true"
+    puts "::error::#{e.message}"
+  else
+    warn e.message
+  end
+  exit 1
 end
 
 main if __FILE__ == $PROGRAM_NAME
