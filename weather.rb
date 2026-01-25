@@ -7,6 +7,32 @@ require "json"
 require "optparse"
 require "time"
 
+Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wind) do
+  def self.from_hourly(hourly_forecast)
+    new(
+      hourly_forecast["startTime"],
+      hourly_forecast["endTime"],
+      hourly_forecast["temperature"],
+      hourly_forecast["probabilityOfPrecipitation"]["value"],
+      hourly_forecast["parsedWindSpeed"]
+    )
+  end
+
+  def continues?(other)
+    end_time == other.start_time
+  end
+
+  def merge_with(other)
+    Period.new(
+      start_time,
+      other.end_time,
+      [temperature, other.temperature].max,
+      [precip_prob, other.precip_prob].max,
+      [max_wind, other.max_wind].max
+    )
+  end
+end
+
 def send_notification(msg)
   provider = ENV.fetch("NOTIFY_PROVIDER", "stdout").downcase
   providers = {
@@ -111,33 +137,18 @@ def weather_forecast(url)
 end
 
 def merge_append_forecast(time_periods, hourly_forecast)
-  if !time_periods.empty? && time_periods.last["endTime"] == hourly_forecast["startTime"]
-    prev = time_periods.last
-    time_periods[-1] = {
-      "startTime" => prev["startTime"],
-      "endTime" => hourly_forecast["endTime"],
-      "temperature" => [hourly_forecast["temperature"], prev["temperature"]].max,
-      "probabilityOfPrecipitation" => [
-        hourly_forecast["probabilityOfPrecipitation"]["value"],
-        prev["probabilityOfPrecipitation"]
-      ].max,
-      "maxWindSpeed" => [hourly_forecast["parsedWindSpeed"], prev["maxWindSpeed"]].max
-    }
+  period = Period.from_hourly(hourly_forecast)
+  if !time_periods.empty? && time_periods.last.continues?(period)
+    time_periods[-1] = time_periods.last.merge_with(period)
   else
-    time_periods << {
-      "startTime" => hourly_forecast["startTime"],
-      "endTime" => hourly_forecast["endTime"],
-      "temperature" => hourly_forecast["temperature"],
-      "probabilityOfPrecipitation" => hourly_forecast["probabilityOfPrecipitation"]["value"],
-      "maxWindSpeed" => hourly_forecast["parsedWindSpeed"]
-    }
+    time_periods << period
   end
 end
 
 def format_period(t)
-  "#{pretty_datetime(t['startTime'])} - #{pretty_time(t['endTime'])}, " \
-  "Temp #{t['temperature']} F, Precipitation #{t['probabilityOfPrecipitation']}%, " \
-  "Wind Speed #{t['maxWindSpeed']} mph"
+  "#{pretty_datetime(t.start_time)} - #{pretty_time(t.end_time)}, " \
+  "Temp #{t.temperature} F, Precipitation #{t.precip_prob}%, " \
+  "Wind Speed #{t.max_wind} mph"
 end
 
 def build_message(good_time_periods, low_wind_periods, bad_weather_periods)
