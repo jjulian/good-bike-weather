@@ -10,6 +10,7 @@ require "time"
 class WeatherError < StandardError; end
 
 Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wind) do
+  # Build a normalized period from an hourly forecast hash.
   def self.from_hourly(hourly_forecast)
     new(
       hourly_forecast["startTime"],
@@ -20,10 +21,12 @@ Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wi
     )
   end
 
+  # Check if this period directly continues another.
   def continues?(other)
     end_time == other.start_time
   end
 
+  # Merge two contiguous periods into one.
   def merge_with(other)
     Period.new(
       start_time,
@@ -35,6 +38,7 @@ Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wi
   end
 end
 
+ # Send a notification using the configured provider.
 def send_notification(msg)
   provider = ENV.fetch("NOTIFY_PROVIDER", "stdout").downcase
   providers = {
@@ -50,10 +54,12 @@ def send_notification(msg)
   providers[provider].call(msg)
 end
 
+ # Print the message to stdout.
 def send_stdout(msg)
   puts msg
 end
 
+ # Send the message via Resend email.
 def send_email(msg)
   require "resend"
 
@@ -82,27 +88,33 @@ def send_email(msg)
   puts response
 end
 
+ # Format a full datetime for display.
 def pretty_datetime(time_str)
   Time.parse(time_str).strftime("%A, %B %-d %-I:%M%P")
 end
 
+ # Format a time-of-day for display.
 def pretty_time(time_str)
   Time.parse(time_str).strftime("%-I:%M%P")
 end
 
+ # Check if the period is daytime and dry enough to consider.
 def daytime_and_dry?(period)
   period["isDaytime"] && period["probabilityOfPrecipitation"]["value"] < 25
 end
 
+ # Check if temperature/wind meets great weather thresholds.
 def great_weather?(temp, wind)
   ((50..85).cover?(temp) && wind < 15) ||
     ((66..95).cover?(temp) && wind <= 25)
 end
 
+ # Check if temperature/wind meets chilly but rideable thresholds.
 def chilly_weather?(temp, wind)
   (40..50).cover?(temp) && wind < 5
 end
 
+ # Fetch and normalize the NOAA forecast periods.
 def weather_forecast(url)
   conn = Faraday.new do |f|
     f.request :retry, max: 3, interval: 1, backoff_factor: 2
@@ -135,6 +147,7 @@ def weather_forecast(url)
   periods
 end
 
+ # Append an hourly period, merging if it is contiguous.
 def merge_append_forecast(time_periods, hourly_forecast)
   period = Period.from_hourly(hourly_forecast)
   if !time_periods.empty? && time_periods.last.continues?(period)
@@ -144,12 +157,14 @@ def merge_append_forecast(time_periods, hourly_forecast)
   end
 end
 
+ # Format a period into a human-readable line.
 def format_period(t)
   "#{pretty_datetime(t.start_time)} - #{pretty_time(t.end_time)}, " \
   "Temp #{t.temperature} F, Precip #{t.precip_prob}%, " \
   "Wind #{t.max_wind} mph"
 end
 
+ # Build the final notification message from categorized periods.
 def build_message(good_time_periods, low_wind_periods, bad_weather_periods)
   return nil if false && good_time_periods.empty? && low_wind_periods.empty?
 
@@ -161,6 +176,7 @@ def build_message(good_time_periods, low_wind_periods, bad_weather_periods)
   msg
 end
 
+ # Parse args, fetch data, and dispatch notifications.
 def main
   options = { debug: false }
   parser = OptionParser.new do |opts|
@@ -191,10 +207,6 @@ def main
     temp = period["temperature"]
     wind = period["parsedWindSpeed"]
 
-    # Weather preferences (precipitation < 25% already filtered above):
-    #   Great:  50-85°F, wind < 15 mph  OR  65-95°F, wind <= 25 mph
-    #   Chilly: 40-50°F, wind < 5 mph
-    #   Other:  everything else (dry but not ideal)
     if great_weather?(temp, wind)
       merge_append_forecast(good_time_periods, period)
     elsif chilly_weather?(temp, wind)
@@ -223,7 +235,7 @@ def main
   end
 rescue WeatherError => e
   if ENV["CI"] == "true"
-    puts "::error::#{e.message}"
+    puts "::error::#{e.message}" # github annotation
   else
     warn e.message
   end
