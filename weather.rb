@@ -62,6 +62,19 @@ def pretty_time(time_str)
   Time.parse(time_str).strftime("%-I:%M%p")
 end
 
+def daytime_and_dry?(period)
+  period["isDaytime"] && period["probabilityOfPrecipitation"]["value"] < 25
+end
+
+def great_weather?(temp, wind)
+  ((50..85).cover?(temp) && wind < 15) ||
+    ((66..95).cover?(temp) && wind <= 25)
+end
+
+def chilly_weather?(temp, wind)
+  (40..50).cover?(temp) && wind < 5
+end
+
 def weather_forecast(url)
   conn = Faraday.new do |f|
     f.request :retry, max: 3, interval: 1, backoff_factor: 2
@@ -163,7 +176,7 @@ def main
   bad_weather_periods = []
 
   periods.each do |period|
-    next unless period["isDaytime"] && period["probabilityOfPrecipitation"]["value"] < 25
+    next unless daytime_and_dry?(period)
 
     temp = period["temperature"]
     wind = period["parsedWindSpeed"]
@@ -172,9 +185,9 @@ def main
     #   Great:  50-85°F, wind < 15 mph  OR  65-95°F, wind <= 25 mph
     #   Chilly: 40-50°F, wind < 5 mph
     #   Other:  everything else (dry but not ideal)
-    if (temp >= 50 && temp <= 85 && wind < 15) || (temp > 65 && temp <= 95 && wind <= 25)
+    if great_weather?(temp, wind)
       merge_append_forecast(good_time_periods, period)
-    elsif temp >= 40 && temp <= 50 && wind < 5
+    elsif chilly_weather?(temp, wind)
       merge_append_forecast(low_wind_periods, period)
     else
       merge_append_forecast(bad_weather_periods, period)
