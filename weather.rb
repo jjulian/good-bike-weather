@@ -55,11 +55,11 @@ def send_email(msg)
 end
 
 def pretty_datetime(time_str)
-  Time.parse(time_str).strftime("%A, %B %d %I:%M%p")
+  Time.parse(time_str).strftime("%A, %B %-d %-I:%M%p")
 end
 
 def pretty_time(time_str)
-  Time.parse(time_str).strftime("%I:%M%p")
+  Time.parse(time_str).strftime("%-I:%M%p")
 end
 
 def weather_forecast(url)
