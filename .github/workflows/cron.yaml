@@ -21,4 +21,4 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           FORECAST_URL: "https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly"
-        run: ruby weather.rb $FORECAST_URL
+        run: bundle exec ruby weather.rb $FORECAST_URL
