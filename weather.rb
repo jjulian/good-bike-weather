@@ -172,6 +172,9 @@ def main
     temp = period["temperature"]
     wind = period["parsedWindSpeed"]
 
+    # Weather preferences (precipitation < 25% already filtered above):
+    #   Great:  50-85°F, wind < 15 mph  OR  65-95°F, wind <= 25 mph
+    #   Chilly: 40-50°F, wind < 5 mph
     if (temp >= 50 && temp <= 85 && wind < 15) || (temp > 65 && temp <= 95 && wind <= 25)
       merge_append_forecast(good_time_periods, period)
     elsif temp >= 40 && temp <= 50 && wind < 5
