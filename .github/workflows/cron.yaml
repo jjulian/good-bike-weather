@@ -2,7 +2,7 @@ name: weather_checker
 
 on:
   schedule:
-    - cron: '0 11 * * *' # 6am EST / 7am EDT daily
+    - cron: '37 8 * * *' # 4:37am Eastern DST
   workflow_dispatch:
 
 jobs:
