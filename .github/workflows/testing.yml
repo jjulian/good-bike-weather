@@ -1,0 +1,19 @@
+name: testing
+
+on:
+  schedule:
+    - cron: '51 * * * *' # hourly testing
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # environment: default
+    steps:
+      - uses: actions/resend-action@1c6593d705ce6230ac1ac32daccd0826045a8c8f
+        with:
+          api-key: '${{ secrets.RESEND_API_KEY }}'
+          sender: '${{ secrets.EMAIL_FROM }}'
+          subject: 'Hello'
+          to: ${{ secrets.EMAIL_TO }}
+          text: 'Hello World'
