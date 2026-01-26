@@ -2,13 +2,13 @@ name: testing
 
 on:
   schedule:
-    - cron: '25 * * * *' # hourly testing
+    - cron: '38 * * * *' # hourly testing
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # environment: default
+    environment: default
     steps:
       - uses: brenden-hogan/resend-action@1c6593d705ce6230ac1ac32daccd0826045a8c8f
         with:
