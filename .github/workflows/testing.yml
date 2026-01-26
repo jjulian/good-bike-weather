@@ -10,9 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: default
     steps:
+      - name: Extract domain from sender email
+        id: email
+        env:
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: echo "domain=${EMAIL_FROM#*@}" >> $GITHUB_OUTPUT
       - uses: brenden-hogan/resend-action@1c6593d705ce6230ac1ac32daccd0826045a8c8f
         with:
           api-key: '${{ secrets.RESEND_API_KEY }}'
+          from-domain: '${{ steps.email.outputs.domain }}'
           sender: '${{ secrets.EMAIL_FROM }}'
           to-array: ${{ secrets.EMAIL_TO }}
           subject: 'Hello World'
