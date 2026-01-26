@@ -10,16 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: default
     steps:
-      - name: Extract domain from sender email
-        id: email
-        env:
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-        run: echo "domain=${EMAIL_FROM#*@}" >> $GITHUB_OUTPUT
-      - uses: brenden-hogan/resend-action@1c6593d705ce6230ac1ac32daccd0826045a8c8f
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
-          api-key: '${{ secrets.RESEND_API_KEY }}'
-          from-domain: '${{ steps.email.outputs.domain }}'
-          sender: '${{ secrets.EMAIL_FROM }}'
-          to-array: ${{ secrets.EMAIL_TO }}
-          subject: 'Hello World'
-          html: '<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px"><h1 style="color:#fff;font-size:32px;margin:0 0 10px;text-shadow:2px 2px 4px rgba(0,0,0,0.2)">Hello World!</h1><p style="color:#e8e8ff;font-size:18px;margin:0">Greetings from your scheduled workflow</p></div>'
+          bundler-cache: true
+      - name: Send test email
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: bundle exec ruby send_test_email.rb
