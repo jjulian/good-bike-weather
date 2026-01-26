@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Report</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.2;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    h2 {
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+    .great { color: #27ae60; }
+    .chilly { color: #f39c12; }
+    .not-ideal { color: #95a5a6; }
+    .period {
+      background: #f8f9fa;
+      border-left: 4px solid;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .period.great { border-left-color: #27ae60; }
+    .period.chilly { border-left-color: #f39c12; }
+    .period.not-ideal { border-left-color: #95a5a6; }
+    .period-time {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .period-details {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .period-details span {
+      margin-right: 15px;
+    }
+    .preview {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <span class="preview"><%= preview %></span>
+
+  <% if good_time_periods.any? %>
+  <h2 class="great">Great weather!</h2>
+  <% good_time_periods.each do |period| %>
+  <div class="period great">
+    <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
+    <div class="period-details">
+      <span>Temp: <%= period.temperature %>&deg;F</span>
+      <span>Precip: <%= period.precip_prob %>%</span>
+      <span>Wind: <%= period.max_wind %> mph</span>
+    </div>
+  </div>
+  <% end %>
+  <% end %>
+
+  <% if low_wind_periods.any? %>
+  <h2 class="chilly">A little chilly, but you can do it!</h2>
+  <% low_wind_periods.each do |period| %>
+  <div class="period chilly">
+    <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
+    <div class="period-details">
+      <span>Temp: <%= period.temperature %>&deg;F</span>
+      <span>Precip: <%= period.precip_prob %>%</span>
+      <span>Wind: <%= period.max_wind %> mph</span>
+    </div>
+  </div>
+  <% end %>
+  <% end %>
+
+  <% if bad_weather_periods.any? %>
+  <h2 class="not-ideal">Not ideal</h2>
+  <% bad_weather_periods.each do |period| %>
+  <div class="period not-ideal">
+    <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
+    <div class="period-details">
+      <span>Temp: <%= period.temperature %>&deg;F</span>
+      <span>Precip: <%= period.precip_prob %>%</span>
+      <span>Wind: <%= period.max_wind %> mph</span>
+    </div>
+  </div>
+  <% end %>
+  <% end %>
+</body>
+</html>

@@ -44,3 +44,10 @@ Testing locally:
 bundle install
 bundle exec ruby weather.rb --debug https://api.weather.gov/gridpoints/LWX/114,80/forecast/hourly
 ```
+
+Previewing the email template:
+```
+ruby preview_email.rb
+open preview.html
+```
+This generates fake weather data and renders the HTML email template to `preview.html` for testing styling changes without making API calls.

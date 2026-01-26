@@ -5,53 +5,23 @@ require "faraday"
 require "faraday/retry"
 require "json"
 require "optparse"
-require "time"
+require_relative "weather_common"
 
 class WeatherError < StandardError; end
 
-Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wind) do
-  # Build a normalized period from an hourly forecast hash.
-  def self.from_hourly(hourly_forecast)
-    new(
-      hourly_forecast["startTime"],
-      hourly_forecast["endTime"],
-      hourly_forecast["temperature"],
-      hourly_forecast["probabilityOfPrecipitation"]["value"],
-      hourly_forecast["parsedWindSpeed"]
-    )
-  end
-
-  # Check if this period directly continues another.
-  def continues?(other)
-    end_time == other.start_time
-  end
-
-  # Merge two contiguous periods into one.
-  def merge_with(other)
-    Period.new(
-      start_time,
-      other.end_time,
-      [temperature, other.temperature].max,
-      [precip_prob, other.precip_prob].max,
-      [max_wind, other.max_wind].max
-    )
-  end
-end
-
  # Send a notification using the configured provider.
-def send_notification(msg)
+def send_notification(msg, html)
   provider = ENV.fetch("NOTIFY_PROVIDER", "stdout").downcase
-  providers = {
-    "stdout" => method(:send_stdout),
-    "resend" => method(:send_email)
-  }
 
-  unless providers.key?(provider)
+  case provider
+  when "stdout"
+    send_stdout(msg)
+  when "resend"
+    send_email(msg, html)
+  else
     raise ArgumentError, "Unsupported NOTIFY_PROVIDER '#{provider}'. " \
-                         "Available providers: #{providers.keys.sort.join(', ')}"
+                         "Available providers: resend, stdout"
   end
-
-  providers[provider].call(msg)
 end
 
  # Print the message to stdout.
@@ -60,7 +30,7 @@ def send_stdout(msg)
 end
 
  # Send the message via Resend email.
-def send_email(msg)
+def send_email(msg, html)
   require "resend"
 
   api_key = ENV["RESEND_API_KEY"]
@@ -81,21 +51,12 @@ def send_email(msg)
     from: from,
     to: to,
     subject: "Good Weather Report",
+    html: html,
     text: msg
   }
 
   response = Resend::Emails.send(params)
   puts response
-end
-
- # Format a full datetime for display.
-def pretty_datetime(time_str)
-  Time.parse(time_str).strftime("%A, %B %-d %-I:%M%P")
-end
-
- # Format a time-of-day for display.
-def pretty_time(time_str)
-  Time.parse(time_str).strftime("%-I:%M%P")
 end
 
  # Check if the period is daytime and dry enough to consider.
@@ -155,13 +116,6 @@ def merge_append_forecast(time_periods, hourly_forecast)
   else
     time_periods << period
   end
-end
-
- # Format a period into a human-readable line.
-def format_period(t)
-  "#{pretty_datetime(t.start_time)} - #{pretty_time(t.end_time)}, " \
-  "Temp #{t.temperature} F, Precip #{t.precip_prob}%, " \
-  "Wind #{t.max_wind} mph"
 end
 
  # Build the final notification message from categorized periods.
@@ -231,7 +185,8 @@ def main
   if msg.nil?
     puts "No good weather found"
   else
-    send_notification(msg)
+    html = render_html(good_time_periods, low_wind_periods, bad_weather_periods)
+    send_notification(msg, html)
   end
 rescue WeatherError => e
   if ENV["CI"] == "true"
