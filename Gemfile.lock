@@ -19,10 +19,13 @@ GEM
     json (2.18.0)
     logger (1.7.0)
     mini_mime (1.1.5)
+    minitest (6.0.1)
+      prism (~> 1.5)
     multi_xml (0.8.1)
       bigdecimal (>= 3.1, < 5)
     net-http (0.9.1)
       uri (>= 0.11.1)
+    prism (1.9.0)
     resend (0.27.0)
       httparty (>= 0.21.0)
     uri (1.1.1)
@@ -35,6 +38,7 @@ DEPENDENCIES
   base64
   faraday
   faraday-retry
+  minitest
   resend
 
 BUNDLED WITH

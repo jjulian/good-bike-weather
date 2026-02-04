@@ -24,7 +24,7 @@ Period = Data.define(:start_time, :end_time, :temperature, :precip_prob, :max_wi
       hourly_forecast["startTime"],
       hourly_forecast["endTime"],
       hourly_forecast["temperature"],
-      hourly_forecast["probabilityOfPrecipitation"]["value"],
+      hourly_forecast["parsedPrecipProb"] || hourly_forecast.dig("probabilityOfPrecipitation", "value"),
       hourly_forecast["parsedWindSpeed"]
     )
   end

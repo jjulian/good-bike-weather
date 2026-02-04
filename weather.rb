@@ -9,6 +9,30 @@ require_relative "weather_common"
 
 class WeatherError < StandardError; end
 
+ # NOAA can return null precipitation values; treat nil as 0 for filtering.
+def precip_value(period)
+  value = period.dig("probabilityOfPrecipitation", "value")
+  value.nil? ? 0 : value
+end
+
+ # Parse wind speed strings like "5 to 10 mph", "10 mph with gusts to 20 mph", or "Calm".
+def parse_wind_speed(wind_speed)
+  return 0 if wind_speed.to_s.strip.downcase == "calm"
+
+  values = wind_speed.to_s.scan(/\d+/).map(&:to_i)
+  return values.max if values.any?
+
+  raise WeatherError, "error: could not parse wind speed #{wind_speed}"
+end
+
+ # Normalize parsed values on periods in-place.
+def normalize_periods(periods)
+  periods.each do |p|
+    p["parsedPrecipProb"] = precip_value(p)
+    p["parsedWindSpeed"] = parse_wind_speed(p["windSpeed"])
+  end
+end
+
  # Send a notification using the configured provider.
 def send_notification(msg, html)
   provider = ENV.fetch("NOTIFY_PROVIDER", "stdout").downcase
@@ -61,7 +85,7 @@ end
 
  # Check if the period is daytime and dry enough to consider.
 def daytime_and_dry?(period)
-  period["isDaytime"] && period["probabilityOfPrecipitation"]["value"] < 25
+  period["isDaytime"] && period["parsedPrecipProb"] < 25
 end
 
  # Check if temperature/wind meets great weather thresholds.
@@ -80,6 +104,8 @@ def weather_forecast(url)
   conn = Faraday.new do |f|
     f.request :retry, max: 3, interval: 1, backoff_factor: 2
     f.headers["User-Agent"] = "github.com/jjulian/good-bike-weather"
+    f.options.timeout = 10
+    f.options.open_timeout = 5
   end
 
   response = conn.get(url)
@@ -95,15 +121,7 @@ def weather_forecast(url)
     raise WeatherError, "error: could not load forecast"
   end
 
-  wind_speed_regex = /(?<high>\d+) mph$/
-
-  periods.each do |p|
-    match = wind_speed_regex.match(p["windSpeed"])
-    if match.nil?
-      raise WeatherError, "error: could not parse wind speed #{p['windSpeed']}"
-    end
-    p["parsedWindSpeed"] = match[:high].to_i
-  end
+  normalize_periods(periods)
 
   periods
 end
@@ -174,7 +192,7 @@ def main
     periods.each do |p|
       next unless p["isDaytime"]
       puts "#{pretty_datetime(p['startTime'])} temp #{p['temperature']} " \
-           "wind #{p['parsedWindSpeed']} precipitation #{p['probabilityOfPrecipitation']['value']}"
+           "wind #{p['parsedWindSpeed']} precipitation #{p['parsedPrecipProb']}"
     end
   end
 
