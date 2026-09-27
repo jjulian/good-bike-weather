@@ -90,7 +90,7 @@ end
 
  # Check if temperature/wind meets great weather thresholds.
 def great_weather?(temp, wind)
-  ((51..85).cover?(temp) && wind < 10) ||
+  ((51..85).cover?(temp) && wind < 20) ||
     ((65..85).cover?(temp) && wind < 30)
 end
 
