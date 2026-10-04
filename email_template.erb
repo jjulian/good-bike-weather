@@ -64,6 +64,9 @@
       <span>Precip: <%= period.precip_prob %>%</span>
       <span>Wind: <%= period.max_wind %> mph</span>
     </div>
+    <% if (note = precip_note(period, precip_windows)) %>
+    <div class="period-details"><%= note %></div>
+    <% end %>
   </div>
   <% end %>
   <% end %>
@@ -78,6 +81,9 @@
       <span>Precip: <%= period.precip_prob %>%</span>
       <span>Wind: <%= period.max_wind %> mph</span>
     </div>
+    <% if (note = precip_note(period, precip_windows)) %>
+    <div class="period-details"><%= note %></div>
+    <% end %>
   </div>
   <% end %>
   <% end %>
@@ -92,6 +98,9 @@
       <span>Precip: <%= period.precip_prob %>%</span>
       <span>Wind: <%= period.max_wind %> mph</span>
     </div>
+    <% if (note = precip_note(period, precip_windows)) %>
+    <div class="period-details"><%= note %></div>
+    <% end %>
   </div>
   <% end %>
   <% end %>

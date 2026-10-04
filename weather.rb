@@ -9,6 +9,9 @@ require_relative "weather_common"
 
 class WeatherError < StandardError; end
 
+# Precipitation probability (%) at or above which a period counts as wet.
+PRECIP_THRESHOLD = 25
+
  # NOAA can return null precipitation values; treat nil as 0 for filtering.
 def precip_value(period)
   value = period.dig("probabilityOfPrecipitation", "value")
@@ -85,7 +88,21 @@ end
 
  # Check if the period is daytime and dry enough to consider.
 def daytime_and_dry?(period)
-  period["isDaytime"] && period["parsedPrecipProb"] < 25
+  period["isDaytime"] && period["parsedPrecipProb"] < PRECIP_THRESHOLD
+end
+
+ # Check if the period is daytime with precipitation expected.
+def daytime_and_wet?(period)
+  period["isDaytime"] && period["parsedPrecipProb"] >= PRECIP_THRESHOLD
+end
+
+ # Merge contiguous wet daytime periods into windows of expected precipitation.
+def precip_windows(periods)
+  windows = []
+  periods.each do |period|
+    merge_append_forecast(windows, period) if daytime_and_wet?(period)
+  end
+  windows
 end
 
  # Check if temperature/wind meets great weather thresholds.
@@ -137,13 +154,13 @@ def merge_append_forecast(time_periods, hourly_forecast)
 end
 
  # Build the final notification message from categorized periods.
-def build_message(good_time_periods, low_wind_periods, bad_weather_periods)
+def build_message(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows = [])
   return nil if false && good_time_periods.empty? && low_wind_periods.empty?
 
   msg = "Weather report:"
-  msg += "\n\nGreat weather!\n#{good_time_periods.map { |t| format_period(t) }.join("\n")}" if good_time_periods.any?
-  msg += "\n\nA little chilly, but you can do it!\n#{low_wind_periods.map { |t| format_period(t) }.join("\n")}" if low_wind_periods.any?
-  msg += "\n\nNot ideal:\n#{bad_weather_periods.map { |t| format_period(t) }.join("\n")}" if bad_weather_periods.any?
+  msg += "\n\nGreat weather!\n#{good_time_periods.map { |t| format_period(t, precip_windows) }.join("\n")}" if good_time_periods.any?
+  msg += "\n\nA little chilly, but you can do it!\n#{low_wind_periods.map { |t| format_period(t, precip_windows) }.join("\n")}" if low_wind_periods.any?
+  msg += "\n\nNot ideal:\n#{bad_weather_periods.map { |t| format_period(t, precip_windows) }.join("\n")}" if bad_weather_periods.any?
   msg += "\n"
   msg
 end
@@ -196,14 +213,15 @@ def main
     end
   end
 
-  msg = build_message(good_time_periods, low_wind_periods, bad_weather_periods)
+  wet_windows = precip_windows(periods)
+  msg = build_message(good_time_periods, low_wind_periods, bad_weather_periods, wet_windows)
 
   return puts msg if options[:debug]
 
   if msg.nil?
     puts "No good weather found"
   else
-    html = render_html(good_time_periods, low_wind_periods, bad_weather_periods)
+    html = render_html(good_time_periods, low_wind_periods, bad_weather_periods, wet_windows)
     send_notification(msg, html)
   end
 rescue WeatherError => e

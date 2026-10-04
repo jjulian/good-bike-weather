@@ -40,11 +40,30 @@ def pretty_time(time_str)
   Time.parse(time_str).strftime("%-I:%M%P")
 end
 
+ # Format a compact hour for display, e.g. "8am" or "8:30am".
+def pretty_hour(time_str)
+  time = Time.parse(time_str)
+  time.strftime(time.min.zero? ? "%-I%P" : "%-I:%M%P")
+end
+
+ # Build a note like "Precip: 50% 8am - 10am" for wet windows on the same day.
+def precip_note(period, precip_windows)
+  day = Time.parse(period.start_time).to_date
+  windows = precip_windows.select { |w| Time.parse(w.start_time).to_date == day }
+  return nil if windows.empty?
+
+  "Precip: " + windows.map { |w|
+    "#{w.precip_prob}% #{pretty_hour(w.start_time)} - #{pretty_hour(w.end_time)}"
+  }.join(", ")
+end
+
  # Format a period into a human-readable line.
-def format_period(t)
-  "#{pretty_datetime(t.start_time)} - #{pretty_time(t.end_time)}, " \
-  "Temp #{t.temperature} F, Precip #{t.precip_prob}%, " \
-  "Wind #{t.max_wind} mph"
+def format_period(t, precip_windows = [])
+  line = "#{pretty_datetime(t.start_time)} - #{pretty_time(t.end_time)}, " \
+         "Temp #{t.temperature} F, Precip #{t.precip_prob}%, " \
+         "Wind #{t.max_wind} mph"
+  note = precip_note(t, precip_windows)
+  note ? "#{line}\n  #{note}" : line
 end
 
  # Generate a preview summary sentence based on available periods.
@@ -76,7 +95,7 @@ def preview_text(good_time_periods, low_wind_periods, bad_weather_periods)
 end
 
  # Render the HTML email template.
-def render_html(good_time_periods, low_wind_periods, bad_weather_periods)
+def render_html(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows = [])
   preview = preview_text(good_time_periods, low_wind_periods, bad_weather_periods)
   template_path = File.join(__dir__, "email_template.erb")
   template = ERB.new(File.read(template_path))

@@ -31,4 +31,17 @@ class TestWeatherParsing < Minitest::Test
     @periods[0]["parsedPrecipProb"] = 30
     refute daytime_and_dry?(@periods[0]), "precip >= 25 should be excluded"
   end
+
+  def test_precip_windows_merge_wet_hours_and_format_note
+    normalize_periods(@periods)
+    @periods[1]["parsedPrecipProb"] = 40
+    @periods[2]["parsedPrecipProb"] = 50
+
+    windows = precip_windows(@periods)
+    assert_equal 1, windows.length
+
+    dry = Period.from_hourly(@periods[0])
+    assert_equal "Precip: 50% 7am - 9am", precip_note(dry, windows)
+    assert_nil precip_note(dry, [])
+  end
 end
