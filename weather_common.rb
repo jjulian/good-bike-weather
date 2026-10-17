@@ -94,9 +94,21 @@ def preview_text(good_time_periods, low_wind_periods, bad_weather_periods)
   end
 end
 
+ # Combine all categorized periods into one chronological list of [category, period].
+def timeline(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows)
+  {
+    "great" => good_time_periods,
+    "chilly" => low_wind_periods,
+    "not-ideal" => bad_weather_periods,
+    "rain" => precip_windows
+  }.flat_map { |category, periods| periods.map { |period| [category, period] } }
+   .sort_by { |_category, period| Time.parse(period.start_time) }
+end
+
  # Render the HTML email template.
 def render_html(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows = [])
   preview = preview_text(good_time_periods, low_wind_periods, bad_weather_periods)
+  segments = timeline(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows)
   template_path = File.join(__dir__, "email_template.erb")
   template = ERB.new(File.read(template_path))
   template.result(binding)
