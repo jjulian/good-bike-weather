@@ -25,6 +25,8 @@
     .great { color: #27ae60; }
     .chilly { color: #f39c12; }
     .not-ideal { color: #95a5a6; }
+    .rain { color: #2980b9; }
+    .legend span { margin-right: 12px; font-weight: bold; }
     .period {
       background: #f8f9fa;
       border-left: 4px solid;
@@ -35,6 +37,7 @@
     .period.great { border-left-color: #27ae60; }
     .period.chilly { border-left-color: #f39c12; }
     .period.not-ideal { border-left-color: #95a5a6; }
+    .period.rain { border-left-color: #2980b9; }
     .period-time {
       font-weight: bold;
       margin-bottom: 5px;
@@ -54,55 +57,25 @@
 <body>
   <span class="preview"><%= preview %></span>
 
-  <% if good_time_periods.any? %>
-  <h2 class="great">Great weather!</h2>
-  <% good_time_periods.each do |period| %>
-  <div class="period great">
-    <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
-    <div class="period-details">
-      <span>Temp: <%= period.temperature %>&deg;F</span>
-      <span>Precip: <%= period.precip_prob %>%</span>
-      <span>Wind: <%= period.max_wind %> mph</span>
-    </div>
-    <% if (note = precip_note(period, precip_windows)) %>
-    <div class="period-details"><%= note %></div>
-    <% end %>
-  </div>
-  <% end %>
-  <% end %>
+  <p class="legend">
+    <span class="great">Great</span>
+    <span class="chilly">Chilly</span>
+    <span class="not-ideal">Not ideal</span>
+    <span class="rain">Rain</span>
+  </p>
 
-  <% if low_wind_periods.any? %>
-  <h2 class="chilly">A little chilly, but you can do it!</h2>
-  <% low_wind_periods.each do |period| %>
-  <div class="period chilly">
+  <% segments.each do |category, period| %>
+  <div class="period <%= category %>">
     <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
     <div class="period-details">
       <span>Temp: <%= period.temperature %>&deg;F</span>
       <span>Precip: <%= period.precip_prob %>%</span>
       <span>Wind: <%= period.max_wind %> mph</span>
     </div>
-    <% if (note = precip_note(period, precip_windows)) %>
+    <% if category != "rain" && (note = precip_note(period, precip_windows)) %>
     <div class="period-details"><%= note %></div>
     <% end %>
   </div>
-  <% end %>
-  <% end %>
-
-  <% if bad_weather_periods.any? %>
-  <h2 class="not-ideal">Not ideal</h2>
-  <% bad_weather_periods.each do |period| %>
-  <div class="period not-ideal">
-    <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
-    <div class="period-details">
-      <span>Temp: <%= period.temperature %>&deg;F</span>
-      <span>Precip: <%= period.precip_prob %>%</span>
-      <span>Wind: <%= period.max_wind %> mph</span>
-    </div>
-    <% if (note = precip_note(period, precip_windows)) %>
-    <div class="period-details"><%= note %></div>
-    <% end %>
-  </div>
-  <% end %>
   <% end %>
 </body>
 </html>
