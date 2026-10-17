@@ -157,10 +157,17 @@ end
 def build_message(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows = [])
   return nil if false && good_time_periods.empty? && low_wind_periods.empty?
 
+  labels = {
+    "great" => "Great", "chilly" => "Chilly", "not-ideal" => "Not ideal", "rain" => "Rain"
+  }
+  lines = timeline(good_time_periods, low_wind_periods, bad_weather_periods, precip_windows)
+    .map do |category, t|
+      line = format_period(t, category == "rain" ? [] : precip_windows)
+      "[#{labels[category]}] #{line}"
+    end
+
   msg = "Weather report:"
-  msg += "\n\nGreat weather!\n#{good_time_periods.map { |t| format_period(t, precip_windows) }.join("\n")}" if good_time_periods.any?
-  msg += "\n\nA little chilly, but you can do it!\n#{low_wind_periods.map { |t| format_period(t, precip_windows) }.join("\n")}" if low_wind_periods.any?
-  msg += "\n\nNot ideal:\n#{bad_weather_periods.map { |t| format_period(t, precip_windows) }.join("\n")}" if bad_weather_periods.any?
+  msg += "\n\n#{lines.join("\n")}" if lines.any?
   msg += "\n"
   msg
 end
