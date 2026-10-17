@@ -38,6 +38,11 @@
     .period.chilly { border-left-color: #f39c12; }
     .period.not-ideal { border-left-color: #95a5a6; }
     .period.rain { border-left-color: #2980b9; }
+    .period.new-day {
+      margin-top: 28px;
+      border-top: 2px solid #34495e;
+    }
+    .period.new-day:first-of-type { margin-top: 10px; }
     .period-time {
       font-weight: bold;
       margin-bottom: 5px;
@@ -64,8 +69,11 @@
     <span class="rain">Rain</span>
   </p>
 
+  <% previous_day = nil %>
   <% segments.each do |category, period| %>
-  <div class="period <%= category %>">
+  <% day = Time.parse(period.start_time).to_date %>
+  <div class="period <%= category %><%= " new-day" if day != previous_day %>">
+  <% previous_day = day %>
     <div class="period-time"><%= pretty_datetime(period.start_time) %> - <%= pretty_time(period.end_time) %></div>
     <div class="period-details">
       <span>Temp: <%= period.temperature %>&deg;F</span>
